@@ -46,10 +46,49 @@ python main.py
 
 
 ## Google Cloud instruction
+### initial setting for ubuntu 16.04
+[reference link](https://alliseesolutions.wordpress.com/2016/09/08/install-gpu-tensorflow-from-sources-w-ubuntu-16-04-and-cuda-8-0/)
+```bash
+#!/bin/bash
+sudo apt-get install gcc make
+sudo apt-get install openjdk-8-jdk git python-dev python3-dev python-numpy python3-numpy python-six python3-six build-essential python-pip python3-pip python-virtualenv swig python-wheel python3-wheel libcurl3-dev libcupti-dev
+pip3 install tensorflow # cpu tensorflow
+mkdir ~/downloads
+cd ~/downloads
+
+# install CUDA Toolkit v8.0
+# instructions from https://developer.nvidia.com/cuda-downloads (linux -> x86_64 -> Ubuntu -> 16.04 -> deb (network))
+wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run cuda_8.0.61_375.26_linux.run
+# remember to choose to install driver and symbolic link to your cuda directory
+sudo sh cuda_8.0.61_375.26_linux.run --override
+
+# install cuDNN v6.0
+CUDNN_TAR_FILE="cudnn-8.0-linux-x64-v6.0.tgz"
+wget http://developer.download.nvidia.com/compute/redist/cudnn/v6.0/${CUDNN_TAR_FILE}
+tar -xzvf ${CUDNN_TAR_FILE}
+sudo cp -P cuda/include/cudnn.h /usr/local/cuda-8.0/include
+sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-8.0/lib64/
+sudo chmod a+r /usr/local/cuda-8.0/lib64/libcudnn*
+
+# set environment variables
+echo "export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64\"" >> ~/.bashrc
+echo "export CUDA_HOME=/usr/local/cuda" >> ~/.bashrc
+source ~/.bashrc
+
+# install NVIDIA CUDA Profile Tools Interface
+sudo apt-get install libcupti-dev
+pip3 install tensorflow-gpu
+```
 ### login to instance
 1. login to our account, go to [Console](https://console.cloud.google.com/compute/instances?project=fluted-castle-186001)
 2. choose 'eecs545', if it is not running, click 'start'
 3. click Pull-down Menu for SSH, choose open in browser window
+
+### gcloud
+- add our account: `gcloud auth login eecs545g3@gmail.com`
+- check current account: `gcloud auth list`
+- set account: `gcloud config set account <account_mail>`
+- copy from local: `gcloud compute scp <localfile> eecs545g3@tensorflow-train:~/download --zone us-east1-d`
 
 ### use Tmux
 tmux enables you to keep your program running when you logout
