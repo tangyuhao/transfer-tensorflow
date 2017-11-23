@@ -43,3 +43,24 @@ python main.py
 
 ## Methods
 **Currently it only supports DAN with Caffe alexnet base-model.**
+
+
+## Google Cloud instruction
+### login to instance
+1. login to our account, go to [Console](https://console.cloud.google.com/compute/instances?project=fluted-castle-186001)
+2. choose 'eecs545', if it is not running, click 'start'
+3. click Pull-down Menu for SSH, choose open in browser window
+
+### use Tmux
+tmux enables you to keep your program running when you logout
+Basic instruction: 
+- install:
+    - ubuntu: `sudo apt-get install tmux`
+    - mac: `brew install tmux`
+- create new session: `tmux new -s <session_name>`
+- when you are in a session, all command should start with 'ctrl+b'
+    - command `s`: get the list of all sessions, choose one and enter which go to that session
+    - command `d`: detach from current session
+    - command `:kill-session`: detach and delete current session
+    - command `:kill-server`: detach and delete all sessions
+- attach a session: `tmux attach-session -t <session_name>` or `tmux attach` (the first session in the list)
