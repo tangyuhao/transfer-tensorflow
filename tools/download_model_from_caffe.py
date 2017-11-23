@@ -22,29 +22,18 @@ def extract_model(input, output, first_fc_in):
     import pickle
     model = {}
     first_conv, first_fc = True, True
-    for name in param_dict:
+    for name in sorted(param_dict):
         params = param_dict[name]
         if name.startswith('fc'):
-            if first_fc: # if fc: kernel should be : in_c * out_c
-                # caffe kernel: out_c * in_c * h * w, tensorflow layer: h * w * in_c * out_c
-
-                # first turn kernel back to 4D kernel with caffe's order,
-                # then transpose to tensorflow's order and flatten
-                shape = (params[0].shape[0], first_fc_in,
-                         *(int(sqrt(params[0].shape[1] // first_fc_in) + 0.5),) * 2)
-                model[name + '/weight'] = params[0].reshape(*shape).transpose([2, 3, 1, 0]).reshape(-1, shape[0])
-                print(model[name+'/weight'].shape)
-                first_fc = False
-            else:
-                model[name + '/weight'] = params[0].transpose([1, 0])
+            model[name + '/weight'] = params[0]
             if len(params) > 1:
                 model[name + '/bias'] = params[1]
         elif name.startswith('conv') or name.startswith('res'):
             if first_conv:
-                model[name + '/weight'] = params[0][:, ::-1].transpose([2, 3, 1, 0])
+                model[name + '/weight'] = params[0][:, ::-1] # [a:b:step] start from a until b with step
                 first_conv = False
             else:
-                model[name + '/weight'] = params[0].transpose([2, 3, 1, 0])
+                model[name + '/weight'] = params[0]
             if len(params) > 1:
                 model[name + '/bias'] = params[1]
         elif name.startswith('bn'):
