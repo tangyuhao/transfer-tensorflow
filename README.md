@@ -103,3 +103,14 @@ Basic instruction:
     - command `:kill-session`: detach and delete current session
     - command `:kill-server`: detach and delete all sessions
 - attach a session: `tmux attach-session -t <session_name>` or `tmux attach` (the first session in the list)
+
+### GPU monitor
+`nvidia-smi -l`
+
+### Code for reference
+[GOTURN-Tensorflow](https://github.com/tangyuhao/GOTURN-Tensorflow)
+
+## To do list
+- [ ] Add summary and checkpoint code
+- [ ] add Adversarial code
+- [ ] report
