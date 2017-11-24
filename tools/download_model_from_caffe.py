@@ -30,7 +30,8 @@ def extract_model(input, output, first_fc_in):
                 model[name + '/bias'] = params[1]
         elif name.startswith('conv') or name.startswith('res'):
             if first_conv:
-                model[name + '/weight'] = params[0][:, ::-1] # [a:b:step] start from a until b with step
+                # kernel: w x h x in_c x out_c, since this model is based on BGR, we convert it to RGB
+                model[name + '/weight'] = params[0][:, :, ::-1, :] # [a:b:step] start from a to b with step
                 first_conv = False
             else:
                 model[name + '/weight'] = params[0]
