@@ -50,17 +50,22 @@ python main.py
 [reference link](https://alliseesolutions.wordpress.com/2016/09/08/install-gpu-tensorflow-from-sources-w-ubuntu-16-04-and-cuda-8-0/)
 ```bash
 #!/bin/bash
-sudo apt-get install gcc make
-sudo apt-get install openjdk-8-jdk git python-dev python3-dev python-numpy python3-numpy python-six python3-six build-essential python-pip python3-pip python-virtualenv swig python-wheel python3-wheel libcurl3-dev libcupti-dev
-pip3 install tensorflow # cpu tensorflow
-mkdir ~/downloads
-cd ~/downloads
+echo "Checking for CUDA and installing."
+mkdir tmp
+cd tmp
+# Check for CUDA and try to install.
+if ! dpkg-query -W cuda; then
+  # The 16.04 installer works with 16.10.
+  curl -O http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1604/x86_64/cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+  dpkg -i ./cuda-repo-ubuntu1604_8.0.61-1_amd64.deb
+  sudo apt-get update
+  sudo apt-get install cuda=8.0.61-1 -y
+fi
 
-# install CUDA Toolkit v8.0
-# instructions from https://developer.nvidia.com/cuda-downloads (linux -> x86_64 -> Ubuntu -> 16.04 -> deb (network))
-wget https://developer.nvidia.com/compute/cuda/8.0/Prod2/local_installers/cuda_8.0.61_375.26_linux-run cuda_8.0.61_375.26_linux.run
-# remember to choose to install driver and symbolic link to your cuda directory
-sudo sh cuda_8.0.61_375.26_linux.run --override
+echo 'export CUDA_HOME=/usr/local/cuda' >> ~/.bashrc
+echo 'export PATH=$PATH:$CUDA_HOME/bin' >> ~/.bashrc
+echo 'export LD_LIBRARY_PATH=$CUDA_HOME/lib64' >> ~/.bashrc
+source ~/.bashrc
 
 # install cuDNN v6.0
 CUDNN_TAR_FILE="cudnn-8.0-linux-x64-v6.0.tgz"
@@ -70,14 +75,12 @@ sudo cp -P cuda/include/cudnn.h /usr/local/cuda-8.0/include
 sudo cp -P cuda/lib64/libcudnn* /usr/local/cuda-8.0/lib64/
 sudo chmod a+r /usr/local/cuda-8.0/lib64/libcudnn*
 
-# set environment variables
-echo "export LD_LIBRARY_PATH=\"$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64\"" >> ~/.bashrc
-echo "export CUDA_HOME=/usr/local/cuda" >> ~/.bashrc
-source ~/.bashrc
+rm -rf ~/cuda
+rm ${CUDNN_TAR_FILE}
 
-# install NVIDIA CUDA Profile Tools Interface
-sudo apt-get install libcupti-dev
-pip3 install tensorflow-gpu
+sudo apt-get install python3-dev python3-pip libcupti-dev
+sudo pip3 install tensorflow-gpu
+
 ```
 ### login to instance
 1. login to our account, go to [Console](https://console.cloud.google.com/compute/instances?project=fluted-castle-186001)
