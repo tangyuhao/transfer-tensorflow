@@ -92,7 +92,7 @@ def main(args):
             .apply_gradients(zip(grads[len(var_list1):], var_list2),
                              global_step=global_step))
 	# added bu yuzeng
-    adv_jmmd_loss_op = tf.train.AdamOptimizer().minimize(loss_reciprocal, global_step = tf.train.get_global_step())
+    adv_jmmd_loss_op = tf.train.AdamOptimizer().minimize(loss_neg, global_step = tf.train.get_global_step())
 
 
     # Initializer
@@ -124,7 +124,7 @@ def main(args):
             for i in range(0,3):
                 _, discriminator_loss = sess.run([adv_jmmd_loss_op, loss_neg])
             if step_val % args.print_freq == 0:
-                print "	 The discriminator loss is: %.3f", loss_neg 
+                print (' The discriminator loss is: %.3f', loss_neg) 
 
 
 
