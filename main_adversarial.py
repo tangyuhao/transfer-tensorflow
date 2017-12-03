@@ -102,9 +102,12 @@ def main(args):
 
     # Run Session
 	# modified
-    with tf.Session() as sess:
+
+    print("Begin Training!!")
+    with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
         sess.run(init)
         sess.run(train_init)
+        print("Train_init finished!!")
         for _ in range(args.max_steps):
             _, lr_val, loss_val, accuracy_val, step_val = \
                 sess.run([train_op, learning_rate, loss, accuracy, global_step])
@@ -166,7 +169,7 @@ if __name__ == '__main__':
                         default='random',
                         help='Sampler for MMD and JMMD. (valid only when '
                              '--loss=mmd or --lost=jmmd)')
-    parser.add_argument('--print-freq', type=int, default=100,
+    parser.add_argument('--print-freq', type=int, default=1,
                         help='')
     parser.add_argument('--test-freq', type=int, default=300,
                         help='')
