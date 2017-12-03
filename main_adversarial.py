@@ -100,11 +100,16 @@ def main(args):
     train_init = tf.group(tf.assign(training, True), target_train_init)
     test_init = tf.group(tf.assign(training, False), target_test_init)
 
+	# saver
+    saver = tf.train.Saver()
+    checkpoint_dir = './checkpoint'
+
     # Run Session
 	# modified
 
     print("Begin Training!!")
-    with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
+    #with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
+    with tf.Session() as sess:
         sess.run(init)
         sess.run(train_init)
         print("Train_init finished!!")
@@ -115,6 +120,9 @@ def main(args):
                 print('  step: %d\tlr: %.8f\tloss: %.3f\taccuracy: %.3f%%' %
                       (step_val, lr_val, loss_val,
                        float(accuracy_val) / args.batch_size * 100))
+            if step_val % (args.print_freq * 100) == 0:
+                saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = step_val, max_to_keep = 1)
+
             if step_val % args.test_freq == 0:
                 accuracies = []
                 sess.run(test_init)
