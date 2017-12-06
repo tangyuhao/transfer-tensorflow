@@ -68,14 +68,15 @@ def main(args):
 
     # Prepare input images
     # method = DeepAdaptationNetwork(base_model, 31)
-    method = JointAdaptationNetwork(base_model, 31)
+    # method = JointAdaptationNetwork(base_model, 31)
+    method = AdversarialJointAdaptationNetwork(base_model, 31)
 
     # Losses and accuracy
-    loss, accuracy = method((source[0], target[0]),
+    loss, accuracy, cross_entropy_loss, jmmd_loss, param_D = method((source[0], target[0]),
                             (source[1], target[1]),
                             loss_weights)
 
-    loss_neg = tf.negative(loss)
+    jmmd_loss_neg = tf.negative(jmmd_loss)
 
     # Optimize
     global_step = training_util.create_global_step()
@@ -92,7 +93,7 @@ def main(args):
             .apply_gradients(zip(grads[len(var_list1):], var_list2),
                              global_step=global_step))
 	# added bu yuzeng
-    adv_jmmd_loss_op = tf.train.AdamOptimizer().minimize(loss_neg, global_step = tf.train.get_global_step())
+    adv_jmmd_loss_op = tf.train.AdamOptimizer().minimize(jmmd_loss_neg, global_step = tf.train.get_global_step(), var_list = param_D)
 
 
     # Initializer
@@ -107,6 +108,11 @@ def main(args):
     # Run Session
 	# modified
 
+    # save flag
+    save_flag_50 = 0
+    save_flag_60 = 0
+    save_flag_70 = 0
+
     print("Begin Training!!")
     #with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
     with tf.Session() as sess:
@@ -114,14 +120,14 @@ def main(args):
         sess.run(train_init)
         print("Train_init finished!!")
         for _ in range(args.max_steps):
-            _, lr_val, loss_val, accuracy_val, step_val = \
-                sess.run([train_op, learning_rate, loss, accuracy, global_step])
+            _, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val, accuracy_val, step_val = \
+                sess.run([train_op, learning_rate, loss, cross_entropy_loss, jmmd_loss, accuracy, global_step]) 
             if step_val % args.print_freq == 0:
-                print('  step: %d\tlr: %.8f\tloss: %.3f\taccuracy: %.3f%%' %
-                      (step_val, lr_val, loss_val,
+                print('  step: %d\tlr: %.8f\tloss: %.3f\tce_loss: %.3f\tjmmd_loss: %.3f\taccuracy: %.3f%%' %
+                      (step_val, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val,
                        float(accuracy_val) / args.batch_size * 100))
             if step_val % (args.print_freq * 100) == 0:
-                saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = step_val, max_to_keep = 1)
+                saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = step_val)
 
             if step_val % args.test_freq == 0:
                 accuracies = []
@@ -131,11 +137,23 @@ def main(args):
                 print('test accuracy: %.3f' % (float(sum(accuracies)) /
                                                args.batch_size * 100 / 20.0))
                 sess.run(train_init)
-			## sess.run for discriminator
-            for i in range(0,3):
-                _, discriminator_loss = sess.run([adv_jmmd_loss_op, loss_neg])
-            if step_val % args.print_freq == 0:
-                print (' The discriminator loss is: %.3f', loss_neg) 
+			# sess.run for discriminator
+            if float(accuracy_val) / args.batch_size > 0.5:
+                if save_flag_50 == 0:
+                    saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
+                    save_flag_50 = 1
+                for i in range(0,1):
+                    _, discriminator_loss = sess.run([adv_jmmd_loss_op, jmmd_loss_neg])
+                    print (' The discriminator loss is: %.3f' % (discriminator_loss)) 
+
+            if (float(accuracy_val) / args.batch_size > 0.6) and (save_flag_60 == 0):
+                saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
+                save_flag_60 = 1
+
+            if (float(accuracy_val) / args.batch_size > 0.7) and (save_flag_70 == 0):
+                saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
+                save_flag_70 = 1
+
 
 
 
