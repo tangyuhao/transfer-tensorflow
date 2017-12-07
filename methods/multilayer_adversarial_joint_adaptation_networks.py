@@ -42,34 +42,72 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
             return tf.get_variable(name=name, shape=shape, initializer=tf.constant_initializer(0))
 
 
-        D_w1 = weight_var([256, 256], 'D_W1')
-        D_b1 = bias_var([256], 'D_b1')
+        D_src_feature_w1 = weight_var([256, 256], 'D_sf_w1')
+        D_src_feature_b1 = bias_var([256], 'D_sf_b1')
 
-        D_w2 = weight_var([256, 256], 'D_W1')
-        D_b2 = bias_var([256], 'D_b1')
+        D_src_feature_w2 = weight_var([256, 256], 'D_sf_W2')
+        D_src_feature_b2 = bias_var([256], 'D_sf_b2')
 
-        param_D = [D_w1, D_b1, D_w2, D_b2]
+        D_tgt_feature_w1 = weight_var([256, 256], 'D_tf_W1')
+        D_tgt_feature_b1 = bias_var([256], 'D_tf_b1')
 
-        def discriminator(x):
-            h1 = tf.nn.relu(tf.add(tf.matmul(x, D_w1), D_b1))
-            D_out = tf.add(tf.matmul(h1, D_w2), D_b2)
+        D_tgt_feature_w2 = weight_var([256, 256], 'D_tf_W2')
+        D_tgt_feature_b2 = bias_var([256], 'D_tf_b2')
+
+
+        D_src_logits_w1 = weight_var([256, 256], 'D_sl_W1')
+        D_src_logits_b1 = bias_var([256], 'D_sl_b1')
+
+        D_src_logits_w2 = weight_var([256, 256], 'D_sl_W2')
+        D_src_logits_b2 = bias_var([256], 'D_sl_b2')
+
+        D_tgt_logits_w1 = weight_var([256, 256], 'D_tl_W1')
+        D_tgt_logits_b1 = bias_var([256], 'D_tl_b1')
+
+        D_tgt_logits_w2 = weight_var([256, 256], 'D_tl_W2')
+        D_tgt_logits_b2 = bias_var([256], 'D_tl_b2')
+        param_D = [D_sf_w1, D_sf_b1, D_sf_w2, D_sf_b2, D_tf_w1, D_tf_b1, D_tf_w2, D_tf_b2, D_sl_w1, D_sl_b1, D_sl_w2, D_sl_b2, D_tl_w1, D_tl_b1, D_tl_w2, D_tl_b2]
+
+        def discriminator_src_feature(x):
+            h1 = tf.nn.relu(tf.add(tf.matmul(x, D_src_feature_w1), D_src_feature_b1))
+            D_out = tf.add(tf.matmul(h1, D_src_feature_w2), D_src_feature_b2)
             return D_out
 
-        source_feature_res = discriminator(source_feature)
-        target_feature_res = discriminator(target_feature)
+        def discriminator_tgt_feature(x):
+            h1 = tf.nn.relu(tf.add(tf.matmul(x, D_tgt_feature_w1), D_tgt_feature_b1))
+            D_out = tf.add(tf.matmul(h1, D_tgt_feature_w2), D_tgt_feature_b2)
+            return D_out
         
+        def discriminator_src_logits(x):
+            h1 = tf.nn.relu(tf.add(tf.matmul(x, D_src_logits_w1), D_src_logits_b1))
+            D_out = tf.add(tf.matmul(h1, D_src_logits_w2), D_src_logits_b2)
+            return D_out
+        
+        def discriminator_tgt_logits(x):
+            h1 = tf.nn.relu(tf.add(tf.matmul(x, D_tgt_logits_w1), D_tgt_logits_b1))
+            D_out = tf.add(tf.matmul(h1, D_tgt_logits_w2), D_tgt_logits_b2)
+            return D_out
+
+        source_feature_res = discriminator_src_feature(source_feature)
+        target_feature_res = discriminator_tgt_feature(target_feature)
+        
+        source_logits_res = discriminator_src_logits(source_logits)
+        target_logits_res = discriminator_tgt_logits(target_logits)
 
         source_feature_adv = tf.add(source_feature, source_feature_res)
         target_feature_adv = tf.add(target_feature, target_feature_res)	
 
+        source_logits_adv = tf.add(source_logits, source_logits_res)
+        target_logits_adv = tf.add(target_logits, target_logits_res)	
+        
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels[0],
                                                                        logits=source_logits,
                                                                        name='xentropy')
         cross_entropy_loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
         ## the line below is modified
         jmmd_losses = [
-            L.jmmd_loss([source_feature_adv, source_logits], 
-                        [target_feature_adv, target_logits]),
+            L.jmmd_loss([source_feature_adv, source_logits_adv], 
+                        [target_feature_adv, target_logits_adv]),
         ]
         final_jmmd_loss = sum([w * l if w is not None else l
                     for w, l in zip_longest(loss_weights,
