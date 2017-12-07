@@ -35,7 +35,7 @@ class AdversarialJointAdaptationNetwork(BaseMethod):
 
         def weight_var(shape, name):
             #return tf.get_variable(name=name, shape=shape, initializer=tf.constant_initializer(PARAM_INIT))
-            return tf.get_variable(name=name, shape=shape, initializer=tf.tf.contrib.layers.xavier_initializer())
+            return tf.get_variable(name=name, shape=shape, initializer=tf.contrib.layers.xavier_initializer())
         
         
         def bias_var(shape, name):

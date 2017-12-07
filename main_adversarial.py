@@ -126,8 +126,8 @@ def main(args):
                 print('  step: %d\tlr: %.8f\tloss: %.3f\tce_loss: %.3f\tjmmd_loss: %.3f\taccuracy: %.3f%%' %
                       (step_val, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val,
                        float(accuracy_val) / args.batch_size * 100))
-            if step_val % (args.print_freq * 100) == 0:
-                saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = step_val)
+            #if step_val % (args.print_freq * 100) == 0:
+                #saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = step_val)
 
             if step_val % args.test_freq == 0:
                 accuracies = []
@@ -140,18 +140,18 @@ def main(args):
 			# sess.run for discriminator
             if float(accuracy_val) / args.batch_size > 0.5:
                 if save_flag_50 == 0:
-                    saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
+                    #saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                     save_flag_50 = 1
                 for i in range(0,1):
                     _, discriminator_loss = sess.run([adv_jmmd_loss_op, jmmd_loss_neg])
                     print (' The discriminator loss is: %.3f' % (discriminator_loss)) 
 
             if (float(accuracy_val) / args.batch_size > 0.6) and (save_flag_60 == 0):
-                saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
+                #saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                 save_flag_60 = 1
 
             if (float(accuracy_val) / args.batch_size > 0.7) and (save_flag_70 == 0):
-                saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
+                #saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                 save_flag_70 = 1
 
 

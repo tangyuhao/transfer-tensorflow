@@ -69,7 +69,7 @@ def main(args):
     # Prepare input images
     # method = DeepAdaptationNetwork(base_model, 31)
     # method = JointAdaptationNetwork(base_model, 31)
-    method = AdversarialJointAdaptationNetwork(base_model, 31)
+    method = MultilayerAdversarialJointAdaptationNetwork(base_model, 31)
 
     # Losses and accuracy
     loss, accuracy, cross_entropy_loss, jmmd_loss, param_D = method((source[0], target[0]),
@@ -144,7 +144,7 @@ def main(args):
                     save_flag_50 = 1
                 for i in range(0,1):
                     _, discriminator_loss = sess.run([adv_jmmd_loss_op, jmmd_loss_neg])
-                    print (' The discriminator loss is: %.3f' % (discriminator_loss)) 
+                    #print (' The discriminator loss is: %.3f' % (discriminator_loss)) 
 
             if (float(accuracy_val) / args.batch_size > 0.6) and (save_flag_60 == 0):
                 #saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())

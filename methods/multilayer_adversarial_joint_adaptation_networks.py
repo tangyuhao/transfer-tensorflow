@@ -6,9 +6,8 @@ from six.moves import zip_longest
 
 
 class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
-
     def __init__(self, base_model, n_class):
-        super(AdversarialJointAdaptationNetwork, self).__init__()
+        super(MultilayerAdversarialJointAdaptationNetwork, self).__init__()
         self.base_model = base_model
         self.feature_dim = base_model.output_dim
         self.n_class = n_class
@@ -18,6 +17,7 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
         #self.fcb_res_tgt = tf.layers.dense()	# fully-connected layer used as the first layer for adversarial network for the source domain
 
     def __call__(self, inputs, labels, loss_weights):
+        n_class = self.n_class
         PARAM_INIT = 0.00001
         # loss weight: [cross entropy, jmmd]
         inputs = tf.concat(inputs, axis=0)
@@ -55,18 +55,18 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
         D_tgt_feature_b2 = bias_var([256], 'D_tf_b2')
 
 
-        D_src_logits_w1 = weight_var([256, 256], 'D_sl_W1')
-        D_src_logits_b1 = bias_var([256], 'D_sl_b1')
+        D_src_logits_w1 = weight_var([n_class, n_class], 'D_sl_W1')
+        D_src_logits_b1 = bias_var([n_class], 'D_sl_b1')
 
-        D_src_logits_w2 = weight_var([256, 256], 'D_sl_W2')
-        D_src_logits_b2 = bias_var([256], 'D_sl_b2')
+        D_src_logits_w2 = weight_var([n_class, n_class], 'D_sl_W2')
+        D_src_logits_b2 = bias_var([n_class], 'D_sl_b2')
 
-        D_tgt_logits_w1 = weight_var([256, 256], 'D_tl_W1')
-        D_tgt_logits_b1 = bias_var([256], 'D_tl_b1')
+        D_tgt_logits_w1 = weight_var([n_class, n_class], 'D_tl_W1')
+        D_tgt_logits_b1 = bias_var([n_class], 'D_tl_b1')
 
-        D_tgt_logits_w2 = weight_var([256, 256], 'D_tl_W2')
-        D_tgt_logits_b2 = bias_var([256], 'D_tl_b2')
-        param_D = [D_sf_w1, D_sf_b1, D_sf_w2, D_sf_b2, D_tf_w1, D_tf_b1, D_tf_w2, D_tf_b2, D_sl_w1, D_sl_b1, D_sl_w2, D_sl_b2, D_tl_w1, D_tl_b1, D_tl_w2, D_tl_b2]
+        D_tgt_logits_w2 = weight_var([n_class, n_class], 'D_tl_W2')
+        D_tgt_logits_b2 = bias_var([n_class], 'D_tl_b2')
+        param_D = [D_src_feature_w1, D_src_feature_b1, D_src_feature_w2, D_src_feature_b2, D_tgt_feature_w1, D_tgt_feature_b1, D_tgt_feature_w2, D_tgt_feature_b2, D_src_logits_w1, D_src_logits_b1, D_src_logits_w2, D_src_logits_b2, D_tgt_logits_w1, D_tgt_logits_b1, D_tgt_logits_w2, D_tgt_logits_b2]
 
         def discriminator_src_feature(x):
             h1 = tf.nn.relu(tf.add(tf.matmul(x, D_src_feature_w1), D_src_feature_b1))
@@ -118,5 +118,5 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
         return loss, accuracy, cross_entropy_loss, final_jmmd_loss, param_D
 
 __all__ = [
-    'AdversarialJointAdaptationNetwork'
+    'MultilayerAdversarialJointAdaptationNetwork'
 ]
