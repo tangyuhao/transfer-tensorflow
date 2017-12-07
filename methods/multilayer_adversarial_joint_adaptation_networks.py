@@ -3,6 +3,7 @@ import utils.layers as nn
 import core.losses as L
 from .base_method import BaseMethod
 from six.moves import zip_longest
+import numpy as np
 
 
 class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
@@ -114,8 +115,9 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
                                             jmmd_losses)])
         loss = final_jmmd_loss + cross_entropy_loss
         correct = tf.nn.in_top_k(target_logits, labels[1], 1)
+        #print('target logits: %\t label: %' % ( tf.cast(tf.reduce_max(target_logits), float), tf.cast(tf.reduce_max(labels[1]), float)) )
         accuracy = tf.reduce_sum(tf.cast(correct, tf.int32))
-        return loss, accuracy, cross_entropy_loss, final_jmmd_loss, param_D
+        return loss, accuracy, cross_entropy_loss, final_jmmd_loss, param_D, tf.reduce_max(target_logits), tf.reduce_mean(labels[1])
 
 __all__ = [
     'MultilayerAdversarialJointAdaptationNetwork'
