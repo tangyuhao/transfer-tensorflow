@@ -6,6 +6,7 @@ from tensorflow.python.training import training_util
 from utils import *
 from models import *
 from methods import *
+from tensorflow.python import debug as tf_debug
 
 
 def configure_learning_rate(args, global_step):
@@ -93,7 +94,7 @@ def main(args):
             .apply_gradients(zip(grads[len(var_list1):], var_list2),
                              global_step=global_step))
 	# added bu yuzeng
-    adv_jmmd_loss_op = tf.train.AdamOptimizer().minimize(jmmd_loss_neg, var_list = param_D, learning_rate = learning_rate)
+    adv_jmmd_loss_op = tf.train.AdamOptimizer(learning_rate = learning_rate).minimize(jmmd_loss_neg, var_list = param_D)
 
 
     # Initializer
@@ -116,6 +117,7 @@ def main(args):
     print("Begin Training!!")
     #with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
     with tf.Session() as sess:
+        sess = tf_debug.LocalCLIDebugWrapperSession(sess)
         sess.run(init)
         sess.run(train_init)
         print("Train_init finished!!")

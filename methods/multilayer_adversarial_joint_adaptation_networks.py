@@ -113,7 +113,7 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
         final_jmmd_loss = sum([w * l if w is not None else l
                     for w, l in zip_longest(loss_weights,
                                             jmmd_losses)])
-        loss = final_jmmd_loss + cross_entropy_loss
+        loss = final_jmmd_loss + cross_entropy_loss  ## it seems that there should be a lambda here!!!
         correct = tf.nn.in_top_k(target_logits, labels[1], 1)
         #print('target logits: %\t label: %' % ( tf.cast(tf.reduce_max(target_logits), float), tf.cast(tf.reduce_max(labels[1]), float)) )
         accuracy = tf.reduce_sum(tf.cast(correct, tf.int32))
