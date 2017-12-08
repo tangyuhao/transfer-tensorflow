@@ -6,6 +6,14 @@ from tensorflow.python.training import training_util
 from utils import *
 from models import *
 from methods import *
+import time
+
+
+# [YueSun's Action] The parameter for checkpoints.
+checkpoint_every = 100
+num_checkpoints = 5
+print("The checkpint will be saved every " + str(checkpoint_every) + " iterations.")
+print("The maximum checkpints saved is: " + str(num_checkpoints))
 
 
 def configure_learning_rate(args, global_step):
@@ -27,6 +35,8 @@ def main(args):
         if tf.gfile.Exists(args.log_dir):
             tf.gfile.DeleteRecursively(args.log_dir)
         tf.gfile.MakeDirs(args.log_dir)
+
+    sess = tf.Session()
 
     # Preprocess
     mean = mean_file_loader('ilsvrc_2012')
@@ -74,6 +84,24 @@ def main(args):
     loss, accuracy = method((source[0], target[0]),
                             (source[1], target[1]),
                             loss_weights)
+    # [YueSun's Action] Add output dir for summaries and checkpoints
+    timestamp = str(int(time.time()))
+    out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
+    print("Writing to {}\n".format(out_dir))
+
+    # [YueSun's Action] Add summary for loss and accuracy
+    tf.summary.scalar('accuracy', accuracy)
+    tf.summary.scalar('loss', loss)
+    train_summary_op = tf.summary.merge_all()
+    train_summary_dir = os.path.join(out_dir, "summaries", "train")
+    train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
+
+    # [YueSun's Action] Add Checkpoint directory.
+    checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
+    checkpoint_prefix = os.path.join(checkpoint_dir, "model")
+    if not os.path.exists(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+    saver = tf.train.Saver(tf.global_variables(), max_to_keep=num_checkpoints)
 
     # Optimize
     global_step = training_util.create_global_step()
@@ -96,24 +124,32 @@ def main(args):
     test_init = tf.group(tf.assign(training, False), target_test_init)
 
     # Run Session
-    with tf.Session() as sess:
-        sess.run(init)
-        sess.run(train_init)
-        for _ in range(args.max_steps):
-            _, lr_val, loss_val, accuracy_val, step_val = \
-                sess.run([train_op, learning_rate, loss, accuracy, global_step])
-            if step_val % args.print_freq == 0:
-                print('  step: %d\tlr: %.8f\tloss: %.3f\taccuracy: %.3f%%' %
-                      (step_val, lr_val, loss_val,
-                       float(accuracy_val) / args.batch_size * 100))
-            if step_val % args.test_freq == 0:
-                accuracies = []
-                sess.run(test_init)
-                for _ in range(20):
-                    accuracies.append(sess.run(accuracy))
-                print('test accuracy: %.3f' % (float(sum(accuracies)) /
-                                               args.batch_size * 100 / 20.0))
-                sess.run(train_init)
+   	
+    sess.run(init)
+    sess.run(train_init)
+    for _ in range(args.max_steps):
+    	# [YueSun's Action] Add summaries into the sess.run and run summary_writer
+        _, summaries, lr_val, loss_val, accuracy_val, step_val = \
+            sess.run([train_op, train_summary_op, learning_rate, loss, accuracy, global_step])
+        train_summary_writer.add_summary(summaries, step_val)
+    	print("The current step is: ", step_val)
+
+        if step_val % args.print_freq == 0:
+            print('  step: %d\tlr: %.8f\tloss: %.3f\taccuracy: %.3f%%' %
+                  (step_val, lr_val, loss_val,
+                   float(accuracy_val) / args.batch_size * 100))
+        if step_val % args.test_freq == 0:
+            accuracies = []
+            sess.run(test_init)
+            for _ in range(20):
+                accuracies.append(sess.run(accuracy))
+            print('test accuracy: %.3f' % (float(sum(accuracies)) /
+                                           args.batch_size * 100 / 20.0))
+            sess.run(train_init)
+        ## [YueSun's Action] Save the checkpoints every {checkpoint_every} loops.
+        if step_val % checkpoint_every == 0:
+            path = saver.save(sess, checkpoint_prefix, global_step=step_val)
+            print("Saved model checkpoint to {}\n".format(path))
 
 
 if __name__ == '__main__':
