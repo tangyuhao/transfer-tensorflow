@@ -5,8 +5,6 @@ from .base_method import BaseMethod
 from six.moves import zip_longest
 import numpy as np
 
-
-
 class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
     def __init__(self, base_model, n_class):
         super(MultilayerAdversarialJointAdaptationNetwork, self).__init__()
@@ -18,7 +16,7 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
         #self.fcb_res_src = tf.layers.dense()	# fully-connected layer used as the first layer for adversarial network for the source domain
         #self.fcb_res_tgt = tf.layers.dense()	# fully-connected layer used as the first layer for adversarial network for the source domain
 
-    def __call__(self, inputs, labels, loss_weights, global_step):
+    def __call__(self, inputs, labels, loss_weights):
         n_class = self.n_class
         PARAM_INIT = 0.00001
         # loss weight: [cross entropy, jmmd]
@@ -56,7 +54,6 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
         D_tgt_feature_w2 = weight_var([256, 256], 'D_tf_W2')
         D_tgt_feature_b2 = bias_var([256], 'D_tf_b2')
 
-
         D_src_logits_w1 = weight_var([n_class, n_class], 'D_sl_W1')
         D_src_logits_b1 = bias_var([n_class], 'D_sl_b1')
 
@@ -68,6 +65,7 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
 
         D_tgt_logits_w2 = weight_var([n_class, n_class], 'D_tl_W2')
         D_tgt_logits_b2 = bias_var([n_class], 'D_tl_b2')
+
         param_D = [D_src_feature_w1, D_src_feature_b1, D_src_feature_w2, D_src_feature_b2, D_tgt_feature_w1, D_tgt_feature_b1, D_tgt_feature_w2, D_tgt_feature_b2, D_src_logits_w1, D_src_logits_b1, D_src_logits_w2, D_src_logits_b2, D_tgt_logits_w1, D_tgt_logits_b1, D_tgt_logits_w2, D_tgt_logits_b2]
 
         def discriminator_src_feature(x):

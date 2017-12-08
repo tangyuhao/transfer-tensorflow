@@ -22,6 +22,10 @@ def configure_learning_rate(args, global_step):
                          args.lr_policy)
 
 
+def single_global_step(global_step):
+    global_step = tf.cast(global_step, tf.float32)
+    return global_step
+
 def main(args):
     # Log
     if args.log_dir:
@@ -73,6 +77,7 @@ def main(args):
     method = MultilayerAdversarialJointAdaptationNetwork(base_model, 31)
 
     # Losses and accuracy
+    global_step = training_util.create_global_step()
     loss, accuracy, cross_entropy_loss, jmmd_loss, param_D, target_logits, target_label = method((source[0], target[0]),
                             (source[1], target[1]),
                             loss_weights)
@@ -80,7 +85,6 @@ def main(args):
     jmmd_loss_neg = tf.negative(jmmd_loss)
 
     # Optimize
-    global_step = training_util.create_global_step()
     var_list1 = list(filter(lambda x: not x.name.startswith('Linear'),
                             tf.global_variables()))
     var_list2 = list(filter(lambda x: x.name.startswith('Linear'),
