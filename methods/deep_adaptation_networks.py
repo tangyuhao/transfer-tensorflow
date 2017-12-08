@@ -35,6 +35,7 @@ class DeepAdaptationNetwork(BaseMethod):
         accuracy = tf.reduce_sum(tf.cast(correct, tf.int32))
         return loss, accuracy
 
+
 __all__ = [
     'DeepAdaptationNetwork'
 ]

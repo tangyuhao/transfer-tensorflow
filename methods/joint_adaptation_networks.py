@@ -28,7 +28,7 @@ class JointAdaptationNetwork(BaseMethod):
                                                                        name='xentropy')
         cross_entropy_loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
         jmmd_losses = [
-            L.jmmd_loss([source_feature, source_logits], 
+            L.jmmd_loss([source_feature, source_logits],
                         [target_feature, target_logits]),
         ]
         loss = sum([w * l if w is not None else l
@@ -37,6 +37,7 @@ class JointAdaptationNetwork(BaseMethod):
         correct = tf.nn.in_top_k(target_logits, labels[1], 1)
         accuracy = tf.reduce_sum(tf.cast(correct, tf.int32))
         return loss, accuracy
+
 
 __all__ = [
     'JointAdaptationNetwork'

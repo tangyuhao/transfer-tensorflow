@@ -73,8 +73,8 @@ def main(args):
 
     # Losses and accuracy
     loss, accuracy, cross_entropy_loss, jmmd_loss, param_D = method((source[0], target[0]),
-                            (source[1], target[1]),
-                            loss_weights)
+                                                                    (source[1], target[1]),
+                                                                    loss_weights)
 
     jmmd_loss_neg = tf.negative(jmmd_loss)
 
@@ -92,21 +92,21 @@ def main(args):
         tf.train.MomentumOptimizer(learning_rate * 10, args.momentum)
             .apply_gradients(zip(grads[len(var_list1):], var_list2),
                              global_step=global_step))
-	# added bu yuzeng
-    adv_jmmd_loss_op = tf.train.AdamOptimizer().minimize(jmmd_loss_neg, global_step = tf.train.get_global_step(), var_list = param_D)
-
+    # added bu yuzeng
+    adv_jmmd_loss_op = tf.train.AdamOptimizer().minimize(jmmd_loss_neg, global_step=tf.train.get_global_step(),
+                                                         var_list=param_D)
 
     # Initializer
     init = tf.group(tf.global_variables_initializer(), source_init)
     train_init = tf.group(tf.assign(training, True), target_train_init)
     test_init = tf.group(tf.assign(training, False), target_test_init)
 
-	# saver
+    # saver
     saver = tf.train.Saver()
     checkpoint_dir = './checkpoint'
 
     # Run Session
-	# modified
+    # modified
 
     # save flag
     save_flag_50 = 0
@@ -114,20 +114,20 @@ def main(args):
     save_flag_70 = 0
 
     print("Begin Training!!")
-    #with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
+    # with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
     with tf.Session() as sess:
         sess.run(init)
         sess.run(train_init)
         print("Train_init finished!!")
         for _ in range(args.max_steps):
             _, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val, accuracy_val, step_val = \
-                sess.run([train_op, learning_rate, loss, cross_entropy_loss, jmmd_loss, accuracy, global_step]) 
+                sess.run([train_op, learning_rate, loss, cross_entropy_loss, jmmd_loss, accuracy, global_step])
             if step_val % args.print_freq == 0:
                 print('  step: %d\tlr: %.8f\tloss: %.3f\tce_loss: %.3f\tjmmd_loss: %.3f\taccuracy: %.3f%%' %
                       (step_val, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val,
                        float(accuracy_val) / args.batch_size * 100))
-            #if step_val % (args.print_freq * 100) == 0:
-                #saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = step_val)
+                # if step_val % (args.print_freq * 100) == 0:
+                # saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = step_val)
 
             if step_val % args.test_freq == 0:
                 accuracies = []
@@ -137,24 +137,22 @@ def main(args):
                 print('test accuracy: %.3f' % (float(sum(accuracies)) /
                                                args.batch_size * 100 / 20.0))
                 sess.run(train_init)
-			# sess.run for discriminator
+            # sess.run for discriminator
             if float(accuracy_val) / args.batch_size > 0.5:
                 if save_flag_50 == 0:
-                    #saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
+                    # saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                     save_flag_50 = 1
-                for i in range(0,1):
+                for i in range(0, 1):
                     _, discriminator_loss = sess.run([adv_jmmd_loss_op, jmmd_loss_neg])
-                    print (' The discriminator loss is: %.3f' % (discriminator_loss)) 
+                    print(' The discriminator loss is: %.3f' % (discriminator_loss))
 
             if (float(accuracy_val) / args.batch_size > 0.6) and (save_flag_60 == 0):
-                #saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
+                # saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                 save_flag_60 = 1
 
             if (float(accuracy_val) / args.batch_size > 0.7) and (save_flag_70 == 0):
-                #saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
+                # saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                 save_flag_70 = 1
-
-
 
 
 if __name__ == '__main__':
@@ -205,7 +203,7 @@ if __name__ == '__main__':
     parser.add_argument('--kernel-num', type=int, default=5,
                         help='Number of kernel for MMD and JMMD. (valid only '
                              'when --loss=mmd or --lost=jmmd)')
-    parser.add_argument('--log-dir', type=str,default='',
+    parser.add_argument('--log-dir', type=str, default='',
                         help='Directory to put the log data.')
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=lambda _: main(FLAGS), argv=[sys.argv[0]] + unparsed)

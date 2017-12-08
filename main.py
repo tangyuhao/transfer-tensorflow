@@ -164,7 +164,7 @@ if __name__ == '__main__':
     parser.add_argument('--kernel-num', type=int, default=5,
                         help='Number of kernel for MMD and JMMD. (valid only '
                              'when --loss=mmd or --lost=jmmd)')
-    parser.add_argument('--log-dir', type=str,default='',
+    parser.add_argument('--log-dir', type=str, default='',
                         help='Directory to put the log data.')
     FLAGS, unparsed = parser.parse_known_args()
     tf.app.run(main=lambda _: main(FLAGS), argv=[sys.argv[0]] + unparsed)
