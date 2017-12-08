@@ -6,6 +6,7 @@ from six.moves import zip_longest
 import numpy as np
 
 
+
 class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
     def __init__(self, base_model, n_class):
         super(MultilayerAdversarialJointAdaptationNetwork, self).__init__()
@@ -17,7 +18,7 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
         #self.fcb_res_src = tf.layers.dense()	# fully-connected layer used as the first layer for adversarial network for the source domain
         #self.fcb_res_tgt = tf.layers.dense()	# fully-connected layer used as the first layer for adversarial network for the source domain
 
-    def __call__(self, inputs, labels, loss_weights):
+    def __call__(self, inputs, labels, loss_weights, global_step):
         n_class = self.n_class
         PARAM_INIT = 0.00001
         # loss weight: [cross entropy, jmmd]
@@ -70,22 +71,22 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
         param_D = [D_src_feature_w1, D_src_feature_b1, D_src_feature_w2, D_src_feature_b2, D_tgt_feature_w1, D_tgt_feature_b1, D_tgt_feature_w2, D_tgt_feature_b2, D_src_logits_w1, D_src_logits_b1, D_src_logits_w2, D_src_logits_b2, D_tgt_logits_w1, D_tgt_logits_b1, D_tgt_logits_w2, D_tgt_logits_b2]
 
         def discriminator_src_feature(x):
-            h1 = tf.nn.relu(tf.add(tf.matmul(x, D_src_feature_w1), D_src_feature_b1))
+            h1 = tf.keras.layers.LeakyReLU(tf.add(tf.matmul(x, D_src_feature_w1), D_src_feature_b1))
             D_out = tf.add(tf.matmul(h1, D_src_feature_w2), D_src_feature_b2)
             return D_out
 
         def discriminator_tgt_feature(x):
-            h1 = tf.nn.relu(tf.add(tf.matmul(x, D_tgt_feature_w1), D_tgt_feature_b1))
+            h1 = tf.keras.layers.LeakyReLU(tf.add(tf.matmul(x, D_tgt_feature_w1), D_tgt_feature_b1))
             D_out = tf.add(tf.matmul(h1, D_tgt_feature_w2), D_tgt_feature_b2)
             return D_out
         
         def discriminator_src_logits(x):
-            h1 = tf.nn.relu(tf.add(tf.matmul(x, D_src_logits_w1), D_src_logits_b1))
+            h1 = tf.keras.layers.LeakyReLU(tf.add(tf.matmul(x, D_src_logits_w1), D_src_logits_b1))
             D_out = tf.add(tf.matmul(h1, D_src_logits_w2), D_src_logits_b2)
             return D_out
         
         def discriminator_tgt_logits(x):
-            h1 = tf.nn.relu(tf.add(tf.matmul(x, D_tgt_logits_w1), D_tgt_logits_b1))
+            h1 = tf.keras.layers.LeakyReLU(tf.add(tf.matmul(x, D_tgt_logits_w1), D_tgt_logits_b1))
             D_out = tf.add(tf.matmul(h1, D_tgt_logits_w2), D_tgt_logits_b2)
             return D_out
 
@@ -113,7 +114,9 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
         final_jmmd_loss = sum([w * l if w is not None else l
                     for w, l in zip_longest(loss_weights,
                                             jmmd_losses)])
-        loss = final_jmmd_loss + cross_entropy_loss  ## it seems that there should be a lambda here!!!
+                                            
+        lamb = float(2) / (1+ np.exp(-1*10*global_step)) - float(1)
+        loss = lamb*final_jmmd_loss + cross_entropy_loss  ## it seems that there should be a lambda here!!!
         correct = tf.nn.in_top_k(target_logits, labels[1], 1)
         #print('target logits: %\t label: %' % ( tf.cast(tf.reduce_max(target_logits), float), tf.cast(tf.reduce_max(labels[1]), float)) )
         accuracy = tf.reduce_sum(tf.cast(correct, tf.int32))
