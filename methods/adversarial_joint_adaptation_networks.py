@@ -13,10 +13,8 @@ class AdversarialJointAdaptationNetwork(BaseMethod):
         self.n_class = n_class
         self.fcb = nn.Linear(self.feature_dim, 256)
         self.fc = nn.Linear(256, n_class)
-        # self.fcb_res_src = tf.layers.dense()	# fully-connected layer used as the first layer for adversarial network for the source domain
-        # self.fcb_res_tgt = tf.layers.dense()	# fully-connected layer used as the first layer for adversarial network for the source domain
 
-    def __call__(self, inputs, labels, loss_weights):
+    def __call__(self, inputs, labels, loss_weights, global_step):
         PARAM_INIT = 0.00001
         # loss weight: [cross entropy, jmmd]
         inputs = tf.concat(inputs, axis=0)
@@ -32,34 +30,12 @@ class AdversarialJointAdaptationNetwork(BaseMethod):
         # code for adversarial network
         # X = tf.placeholder(tf.float32, shape=[None, 784], name='X')
 
-        def weight_var(shape, name):
-            # return tf.get_variable(name=name, shape=shape, initializer=tf.constant_initializer(PARAM_INIT))
-            return tf.get_variable(name=name, shape=shape, initializer=tf.contrib.layers.xavier_initializer())
 
-        def bias_var(shape, name):
-            return tf.get_variable(name=name, shape=shape, initializer=tf.constant_initializer(0))
+        bw_offset = tf.get_variable(name='bw_offset', shape=[1], initializer=tf.constant_initializer(0))
+        bw_scale = tf.get_variable(name='bw_scale', shape=[1], initializer=tf.constant_initializer(1))
 
-        D_w1 = weight_var([256, 256], 'D_W1')
-        D_b1 = bias_var([256], 'D_b1')
+        param_bw = [bw_offset, bw_scale]
 
-        param_D = [D_w1, D_b1]
-
-        def discriminator(x):
-            D_out = tf.add(tf.matmul(x, D_w1), D_b1)
-            return D_out
-
-        source_feature_res = discriminator(source_feature)
-        target_feature_res = discriminator(target_feature)
-
-        # source_feature_res = tf.layers.dense(inputs = source_feature_stoped, units = 256, kernel_initializer = tf.constant_initializer(PARAM_INIT), \
-        #    bias_initializer = tf.constant_initializer(PARAM_INIT))
-        # target_feature_res = tf.layers.dense(inputs = target_feature_stoped, units = 256, kernel_initializer = tf.constant_initializer(PARAM_INIT), \
-        #    bias_initializer = tf.constant_initializer(PARAM_INIT))
-
-
-
-        source_feature_adv = tf.add(source_feature, source_feature_res)
-        target_feature_adv = tf.add(target_feature, target_feature_res)
 
         cross_entropy = tf.nn.sparse_softmax_cross_entropy_with_logits(labels=labels[0],
                                                                        logits=source_logits,
@@ -67,16 +43,20 @@ class AdversarialJointAdaptationNetwork(BaseMethod):
         cross_entropy_loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
         ## the line below is modified
         jmmd_losses = [
-            L.jmmd_loss([source_feature_adv, source_logits],
-                        [target_feature_adv, target_logits]),
+            L.jmmd_loss([source_feature, source_logits],
+                        [target_feature, target_logits], offset=bw_offset, scale=bw_scale),
         ]
         final_jmmd_loss = sum([w * l if w is not None else l
                                for w, l in zip_longest(loss_weights,
                                                        jmmd_losses)])
+        
+        a = tf.to_float(global_step)
+        lamb = 2.0 / (1 + tf.exp(-10 * a)) - 1.0
+        loss = lamb * final_jmmd_loss + cross_entropy_loss 
         loss = final_jmmd_loss + cross_entropy_loss
         correct = tf.nn.in_top_k(target_logits, labels[1], 1)
         accuracy = tf.reduce_sum(tf.cast(correct, tf.int32))
-        return loss, accuracy, cross_entropy_loss, final_jmmd_loss, param_D
+        return loss, accuracy, cross_entropy_loss, final_jmmd_loss, param_bw
 
 
 __all__ = [
