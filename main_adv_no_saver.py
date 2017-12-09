@@ -203,7 +203,7 @@ if __name__ == '__main__':
                         default='random',
                         help='Sampler for MMD and JMMD. (valid only when '
                              '--loss=mmd or --lost=jmmd)')
-    parser.add_argument('--print-freq', type=int, default=1,
+    parser.add_argument('--print-freq', type=int, default=100,
                         help='')
     parser.add_argument('--test-freq', type=int, default=300,
                         help='')
