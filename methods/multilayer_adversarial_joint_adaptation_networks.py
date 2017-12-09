@@ -77,19 +77,19 @@ class MultilayerAdversarialJointAdaptationNetwork(BaseMethod):
 
         def discriminator_tgt_feature(x):
             #h1 = tf.nn.leaky_relu(tf.add(tf.matmul(x, D_tgt_feature_w1), D_tgt_feature_b1))
-            h1 = tf.add(tf.matmul(x, D_src_feature_w1), D_src_feature_b1))
+            h1 = tf.add(tf.matmul(x, D_tgt_feature_w1), D_tgt_feature_b1)
             D_out = tf.add(tf.matmul(h1, D_tgt_feature_w2), D_tgt_feature_b2)
             return D_out
 
         def discriminator_src_logits(x):
             #h1 = tf.nn.leaky_relu(tf.add(tf.matmul(x, D_src_logits_w1), D_src_logits_b1))
-            h1 = tf.add(tf.matmul(x, D_src_feature_w1), D_src_feature_b1))
+            h1 = tf.add(tf.matmul(x, D_src_logits_w1), D_src_logits_b1)
             D_out = tf.add(tf.matmul(h1, D_src_logits_w2), D_src_logits_b2)
             return D_out
 
         def discriminator_tgt_logits(x):
             #h1 = tf.nn.leaky_relu(tf.add(tf.matmul(x, D_tgt_logits_w1), D_tgt_logits_b1))
-            h1 = tf.add(tf.matmul(x, D_src_feature_w1), D_src_feature_b1))
+            h1 = tf.add(tf.matmul(x, D_tgt_logits_w1), D_tgt_logits_b1)
             D_out = tf.add(tf.matmul(h1, D_tgt_logits_w2), D_tgt_logits_b2)
             return D_out
 
