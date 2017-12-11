@@ -10,7 +10,7 @@ from tensorflow.python import debug as tf_debug
 import time
 
 
-checkpoint_every = 1
+checkpoint_every = 100
 num_checkpoints = 5
 print("The checkpint will be saved every " + str(checkpoint_every) + " iterations.")
 print("The maximum checkpints saved is: " + str(num_checkpoints))
@@ -155,10 +155,16 @@ def main(args):
     
         print("Begin Training!!")
         # with tf.Session(config=tf.ConfigProto(log_device_placement=True)) as sess:
-            # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+        # sess = tf_debug.LocalCLIDebugWrapperSession(sess)
         sess.run(init)
         sess.run(train_init)
         print("Train_init finished!!")
+
+        # restore the checkpoint
+        #saver.restore(sess, os.path.join(checkpoint_prefix, '-3'))
+        saver.restore(sess, 'runs/1512890736/checkpoints/model-3')
+        print("Restore the checkpoint")
+
         for _ in range(args.max_steps):
             _, summaries, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val, accuracy_val, step_val, offset_val, scale_val = \
                 sess.run(
