@@ -162,7 +162,7 @@ def main(args):
 
         # restore the checkpoint
         #saver.restore(sess, os.path.join(checkpoint_prefix, '-3'))
-        saver.restore(sess, 'runs/1512890736/checkpoints/model-3')
+        saver.restore(sess, 'runs/1512927344/checkpoints/model-32000')
         print("Restore the checkpoint")
 
         for _ in range(args.max_steps):
@@ -206,7 +206,7 @@ def main(args):
             ## [YueSun's Action] Save the checkpoints every {checkpoint_every} loops.
             if step_val % checkpoint_every == 0:
                 path = saver.save(sess, checkpoint_prefix, global_step=step_val)
-            print("Saved model checkpoint to {}\n".format(path))
+                print("Saved model checkpoint to {}\n".format(path))
 
 
 if __name__ == '__main__':
