@@ -36,73 +36,72 @@ def single_global_step(global_step):
 
 def main(args):
 
-    with tf.Session() as sess:
+    # Log
+    if args.log_dir:
+        if tf.gfile.Exists(args.log_dir):
+            tf.gfile.DeleteRecursively(args.log_dir)
+        tf.gfile.MakeDirs(args.log_dir)
 
-        # Log
-        if args.log_dir:
-            if tf.gfile.Exists(args.log_dir):
-                tf.gfile.DeleteRecursively(args.log_dir)
-            tf.gfile.MakeDirs(args.log_dir)
+    # Preprocess
+    mean = mean_file_loader('ilsvrc_2012')
+    train_transform = transforms.Compose([
+        transforms.Scale(256),
+        transforms.Normalize(mean),
+        transforms.RandomCrop(227),
+        transforms.RandomHorizontalFlip()
+    ], 'TrainPreprocess')
+    test_transform = transforms.Compose([
+        transforms.Scale(256),
+        transforms.Normalize(mean),
+        transforms.CenterCrop(227)
+    ], 'TestPreprocess')
+
+    # Datasets
+    source_dataset = datasets.CSVImageLabelDataset(args.source)
+    target_dataset = datasets.CSVImageLabelDataset(args.target)
+
+    # Loaders
+    source, (source_init,) = loader.load_data(
+        loader.load_dataset(source_dataset, batch_size=args.batch_size,
+                            transforms=(train_transform,)))
+    target, (target_train_init, target_test_init) = loader.load_data(
+        loader.load_dataset(target_dataset, batch_size=args.batch_size,
+                            transforms=(train_transform,)),
+        loader.load_dataset(target_dataset, batch_size=args.batch_size,
+                            transforms=(test_transform,)))
+
+    # Variables
+    training = tf.get_variable('train', initializer=True, trainable=False,
+                               collections=[tf.GraphKeys.LOCAL_VARIABLES])
+
+    # Loss weights
+    loss_weights = [float(i) for i in args.loss_weights.split(',') if i]
+
+    # Construct base model
+    base_model = Alexnet(training, fc=-1, pretrained=True)
+
+    # Prepare input images
+    # method = DeepAdaptationNetwork(base_model, 31)
+    # method = JointAdaptationNetwork(base_model, 31)
+    method = AdversarialJointAdaptationNetwork(base_model, 31)
+
+    # Losses and accuracy
+    global_step = training_util.create_global_step()
+    loss, accuracy, cross_entropy_loss, jmmd_loss, param_bw = method((source[0], target[0]),
+                                                                     (source[1], target[1]),
+                                                                     loss_weights,
+                                                                    global_step)
     
-        # Preprocess
-        mean = mean_file_loader('ilsvrc_2012')
-        train_transform = transforms.Compose([
-            transforms.Scale(256),
-            transforms.Normalize(mean),
-            transforms.RandomCrop(227),
-            transforms.RandomHorizontalFlip()
-        ], 'TrainPreprocess')
-        test_transform = transforms.Compose([
-            transforms.Scale(256),
-            transforms.Normalize(mean),
-            transforms.CenterCrop(227)
-        ], 'TestPreprocess')
-    
-        # Datasets
-        source_dataset = datasets.CSVImageLabelDataset(args.source)
-        target_dataset = datasets.CSVImageLabelDataset(args.target)
-    
-        # Loaders
-        source, (source_init,) = loader.load_data(
-            loader.load_dataset(source_dataset, batch_size=args.batch_size,
-                                transforms=(train_transform,)))
-        target, (target_train_init, target_test_init) = loader.load_data(
-            loader.load_dataset(target_dataset, batch_size=args.batch_size,
-                                transforms=(train_transform,)),
-            loader.load_dataset(target_dataset, batch_size=args.batch_size,
-                                transforms=(test_transform,)))
-    
-    
-        # Variables
-        training = tf.get_variable('train', initializer=True, trainable=False,
-                                   collections=[tf.GraphKeys.LOCAL_VARIABLES])
-    
-        # Loss weights
-        loss_weights = [float(i) for i in args.loss_weights.split(',') if i]
-    
-        # Construct base model
-        base_model = Alexnet(training, fc=-1, pretrained=True)
-    
-        # Prepare input images
-        # method = DeepAdaptationNetwork(base_model, 31)
-        # method = JointAdaptationNetwork(base_model, 31)
-        method = AdversarialJointAdaptationNetwork(base_model, 31)
-    
-        # Losses and accuracy
-        global_step = training_util.create_global_step()
-        loss, accuracy, cross_entropy_loss, jmmd_loss, param_bw = method((source[0], target[0]),
-                                                                         (source[1], target[1]),
-                                                                         loss_weights,
-                                                                         global_step)
+    # Add output dir for summaries and checkpoints
+    timestamp = str(int(time.time()))
+    out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
+    print("Writing to {}\n".format(out_dir))
+
+
+    with tf.Session() as sess:
         bw_offset = param_bw[0]
         bw_scale = param_bw[1]
         jmmd_loss_neg = tf.negative(jmmd_loss)
-    
-    
-        # Add output dir for summaries and checkpoints
-        timestamp = str(int(time.time()))
-        out_dir = os.path.abspath(os.path.join(os.path.curdir, "runs", timestamp))
-        print("Writing to {}\n".format(out_dir))
     
         # Add summary for loss and accuracy
         tf.summary.scalar('accuracy', accuracy)
@@ -142,8 +141,8 @@ def main(args):
         test_init = tf.group(tf.assign(training, False), target_test_init)
     
         # saver
-        saver = tf.train.Saver()
-        checkpoint_dir = './checkpoint'
+        #saver = tf.train.Saver()
+        #checkpoint_dir = './checkpoint'
     
         # Run Session
         # modified
@@ -160,10 +159,10 @@ def main(args):
         sess.run(train_init)
         print("Train_init finished!!")
 
-        # restore the checkpoint
+        # restore the checkpoint!
         #saver.restore(sess, os.path.join(checkpoint_prefix, '-3'))
-        saver.restore(sess, 'runs/1512927344/checkpoints/model-32000')
-        print("Restore the checkpoint")
+        #saver.restore(sess, 'runs/1512927344/checkpoints/model-32000')
+        #print("Restore the checkpoint")
 
         for _ in range(args.max_steps):
             _, summaries, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val, accuracy_val, step_val, offset_val, scale_val = \
