@@ -104,13 +104,16 @@ def main(args):
         jmmd_loss_neg = tf.negative(jmmd_loss)
     
         # Add summary for loss and accuracy
-        tf.summary.scalar('accuracy', accuracy)
+        tf.summary.scalar('accuracy', accuracy / args.batch_size * 100)
         tf.summary.scalar('loss', loss)
         tf.summary.scalar('cross entropy loss', cross_entropy_loss)
         tf.summary.scalar('jmmd loss', jmmd_loss)
-        train_summary_op = tf.summary.merge_all()
+        summary_op = tf.summary.merge_all()
         train_summary_dir = os.path.join(out_dir, "summaries", "train")
         train_summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
+
+        test_summary_dir = os.path.join(out_dir, "summaries", "test")
+        test_summary_writer = tf.summary.FileWriter(test_summary_dir)
     
         # Add Checkpoint directory
         checkpoint_dir = os.path.abspath(os.path.join(out_dir, "checkpoints"))
@@ -167,26 +170,29 @@ def main(args):
         for _ in range(args.max_steps):
             _, summaries, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val, accuracy_val, step_val, offset_val, scale_val = \
                 sess.run(
-                    [train_op, train_summary_op, learning_rate, loss, cross_entropy_loss, jmmd_loss, accuracy, global_step, bw_offset, bw_scale])
+                    [train_op, summary_op, learning_rate, loss, cross_entropy_loss, jmmd_loss, accuracy, global_step, bw_offset, bw_scale])
             train_summary_writer.add_summary(summaries, step_val)
                     
             if step_val % args.print_freq == 0:
                 print('  step: %d\tlr: %.8f\tloss: %.3f\tce_loss: %.3f\tjmmd_loss: %.3f\taccuracy: %.3f\toffset: %.3f\tscale: %.3f%%' %
                       (step_val, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val,
-                       float(accuracy_val) / args.batch_size * 100, offset_val, scale_val))
+                       float(accuracy_val), offset_val, scale_val))
     
                 # saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = step_val)
     
             if step_val % args.test_freq == 0:
                 accuracies = []
                 sess.run(test_init)
+                summaries, step_val = sess.run([summary_op, global_step])
                 for _ in range(20):
                     accuracies.append(sess.run(accuracy))
-                print('test accuracy: %.3f' % (float(sum(accuracies)) /
-                                               args.batch_size * 100 / 20.0))
+                print('test accuracy: %.3f' % (float(sum(accuracies)) / 20))
+
+                test_summary_writer.add_summary(summaries, step_val)
                 sess.run(train_init)
+
             # sess.run for discriminator
-            if float(accuracy_val) / args.batch_size > 0.65:
+            if float(accuracy_val) / 100 > 0.65:
                 if save_flag_50 == 0:
                     # saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                     save_flag_50 = 1
@@ -194,11 +200,11 @@ def main(args):
                     _, discriminator_loss = sess.run([adv_jmmd_loss_op, jmmd_loss_neg])
                     # print (' The discriminator loss is: %.3f' % (discriminator_loss))
     
-            if (float(accuracy_val) / args.batch_size > 0.6) and (save_flag_60 == 0):
+            if (float(accuracy_val) / 100 > 0.6) and (save_flag_60 == 0):
                 # saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                 save_flag_60 = 1
     
-            if (float(accuracy_val) / args.batch_size > 0.7) and (save_flag_70 == 0):
+            if (float(accuracy_val) / 100 > 0.7) and (save_flag_70 == 0):
                 # saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                 save_flag_70 = 1
 
