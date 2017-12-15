@@ -104,7 +104,7 @@ def main(args):
         jmmd_loss_neg = tf.negative(jmmd_loss)
     
         # Add summary for loss and accuracy
-        tf.summary.scalar('accuracy', accuracy / args.batch_size * 130)
+        tf.summary.scalar('accuracy', accuracy / args.batch_size * 100)
         tf.summary.scalar('loss', loss)
         tf.summary.scalar('cross entropy loss', cross_entropy_loss)
         tf.summary.scalar('jmmd loss', jmmd_loss)
@@ -172,7 +172,8 @@ def main(args):
                 sess.run(
                     [train_op, summary_op, learning_rate, loss, cross_entropy_loss, jmmd_loss, accuracy, global_step, bw_offset, bw_scale])
             train_summary_writer.add_summary(summaries, step_val)
-                    
+                  
+            accuracy_val = float(accuracy_val) * 100.0 / 64.0  
             if step_val % args.print_freq == 0:
                 print('  step: %d\tlr: %.8f\tloss: %.3f\tce_loss: %.3f\tjmmd_loss: %.3f\taccuracy: %.3f\toffset: %.3f\tscale: %.3f%%' %
                       (step_val, lr_val, loss_val, cross_entropy_loss_val, jmmd_loss_val,
@@ -186,13 +187,13 @@ def main(args):
                 summaries, step_val = sess.run([summary_op, global_step])
                 for _ in range(20):
                     accuracies.append(sess.run(accuracy))
-                print('test accuracy: %.3f' % 1.3*(float(sum(accuracies)) / 20))
+                print('test accuracy: %.3f' % ( float(sum(accuracies)) * 100 / (20*64)))
 
                 test_summary_writer.add_summary(summaries, step_val)
                 sess.run(train_init)
 
             # sess.run for discriminator
-            if float(accuracy_val) / 100 > 0.65:
+            if float(accuracy_val) / 100 > 0.5:
                 if save_flag_50 == 0:
                     # saver.save(sess, checkpoint_dir + '/model.ckpt', global_step = tf.train.get_global_step())
                     save_flag_50 = 1
