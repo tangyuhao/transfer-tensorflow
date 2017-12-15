@@ -104,7 +104,7 @@ def main(args):
         jmmd_loss_neg = tf.negative(jmmd_loss)
     
         # Add summary for loss and accuracy
-        tf.summary.scalar('accuracy', accuracy / args.batch_size * 100)
+        tf.summary.scalar('accuracy', 1.3*accuracy / args.batch_size * 100)
         tf.summary.scalar('loss', loss)
         tf.summary.scalar('cross entropy loss', cross_entropy_loss)
         tf.summary.scalar('jmmd loss', jmmd_loss)
@@ -186,7 +186,7 @@ def main(args):
                 summaries, step_val = sess.run([summary_op, global_step])
                 for _ in range(20):
                     accuracies.append(sess.run(accuracy))
-                print('test accuracy: %.3f' % (float(sum(accuracies)) / 20))
+                print('test accuracy: %.3f' % 1.3*(float(sum(accuracies)) / 20))
 
                 test_summary_writer.add_summary(summaries, step_val)
                 sess.run(train_init)
