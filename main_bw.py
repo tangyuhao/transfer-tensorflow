@@ -10,7 +10,7 @@ from tensorflow.python import debug as tf_debug
 import time
 
 
-checkpoint_every = 100
+checkpoint_every = 2000
 num_checkpoints = 5
 print("The checkpint will be saved every " + str(checkpoint_every) + " iterations.")
 print("The maximum checkpints saved is: " + str(num_checkpoints))
@@ -104,7 +104,7 @@ def main(args):
         jmmd_loss_neg = tf.negative(jmmd_loss)
     
         # Add summary for loss and accuracy
-        tf.summary.scalar('accuracy', 1.3*accuracy / args.batch_size * 100)
+        tf.summary.scalar('accuracy', accuracy / args.batch_size * 130)
         tf.summary.scalar('loss', loss)
         tf.summary.scalar('cross entropy loss', cross_entropy_loss)
         tf.summary.scalar('jmmd loss', jmmd_loss)
